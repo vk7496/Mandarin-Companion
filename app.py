@@ -21,7 +21,7 @@ st.markdown("""
 
 # مقداردهی اولیه OpenAI
 # نکته: در نسخه نهایی API Key را در Streamlit Secrets بگذارید
-client = OpenAI(api_key="YOUR_OPENAI_API_KEY") 
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"]) 
 
 # شماره واتس‌اپ شما برای دمو (با کد کشور عمان 968 یا ایران 98)
 YOUR_WHATSAPP_NUMBER = "96891278434" 
