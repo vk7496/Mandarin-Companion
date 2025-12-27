@@ -131,14 +131,14 @@ with st.sidebar:
             msg = f"🚖 TAXI REQUEST\nRoom: 302\nTo: {dest}\nAt: {tm}\nPayment: Room Charge"
             encoded_msg = urllib.parse.quote(msg)
             # شماره خود را اینجا جایگزین کنید
-            st.markdown(f"[✅ Confirm on WhatsApp](https://wa.me/968XXXXXXXX?text={encoded_msg})")
+            st.markdown(f"[✅ Confirm on WhatsApp](https://wa.me/96891278434?text={encoded_msg})")
 
     st.divider()
     st.markdown("### 🛎️ Quick Actions")
     
     # دکمه‌های سریع واتس‌اپ
     def wa_btn(label, text):
-        url = f"https://wa.me/968XXXXXXXX?text={urllib.parse.quote(text)}"
+        url = f"https://wa.me/96891278434?text={urllib.parse.quote(text)}"
         if st.button(label):
             st.markdown(f"[Send to Concierge]({url})")
 
@@ -148,6 +148,6 @@ with st.sidebar:
     st.divider()
     if st.button("📍 Share My Location"):
         msg = "I am outside and need assistance. (Attach location in WhatsApp)"
-        st.markdown(f"[Open WhatsApp](https://wa.me/968XXXXXXXX?text={urllib.parse.quote(msg)})")
+        st.markdown(f"[Open WhatsApp](https://wa.me/96891278434?text={urllib.parse.quote(msg)})")
 
     st.caption("v2.5 • Mandarin Oriental Muscat")
