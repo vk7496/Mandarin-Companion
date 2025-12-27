@@ -1,114 +1,153 @@
 import streamlit as st
 from groq import Groq
+import urllib.parse
+from datetime import datetime
 
-# تنظیمات اصلی صفحه
-st.set_page_config(page_title="Mandarin Oriental Concierge", page_icon="🏮", layout="centered")
+# ---------------------------------------------------------
+# 1. تنظیمات اولیه
+# ---------------------------------------------------------
+st.set_page_config(
+    page_title="Mandarin Oriental AI Concierge",
+    page_icon="🏮",
+    layout="centered"
+)
 
-# طراحی ظاهری (CSS) برای ایجاد حس لوکس
+# ---------------------------------------------------------
+# 2. استایل لوکس (تم طلایی، سفید و مشکی)
+# ---------------------------------------------------------
 st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700&display=swap');
+    
+    html, body, [class*="st-"] { font-family: 'Vazirmatn', sans-serif; }
+    
     .stApp { background-color: #ffffff; }
-    /* استایل دکمه‌های سایدبار */
-    .stButton>button { 
-        border-radius: 4px; 
-        background-color: #8D734A; 
-        color: white;
-        border: none;
+    
+    /* سایدبار تیره و شیک */
+    section[data-testid="stSidebar"] {
+        background-color: #111111;
+        color: #ffffff;
+    }
+
+    /* دکمه‌های طلایی */
+    .stButton>button {
+        width: 100%;
+        border-radius: 4px;
+        border: 1px solid #8D734A !important;
+        color: #8D734A !important;
+        background-color: transparent !important;
+        font-weight: bold;
         transition: 0.3s;
     }
+    
     .stButton>button:hover {
-        background-color: #705a38;
-        border: none;
-        color: white;
+        background-color: #8D734A !important;
+        color: white !important;
     }
-    /* رنگ تیره برای سایدبار */
-    section[data-testid="stSidebar"] {
-        background-color: #1a1a1a;
-        color: white;
-    }
+
+    /* فیلدهای ورودی سایدبار */
+    [data-testid="stSidebar"] label { color: #8D734A !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# اتصال به Groq از طریق Secrets
-# در پنل استریم‌لیت کلمه GROQ_API_KEY را تعریف کنید
+# ---------------------------------------------------------
+# 3. راه‌اندازی API و دانش هتل
+# ---------------------------------------------------------
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 except Exception as e:
-    st.error("Error: Please set GROQ_API_KEY in Streamlit Secrets.")
+    st.error("Missing GROQ_API_KEY in Secrets.")
 
-# بارگذاری دانش هتل از فایل محلی
 try:
     with open("knowledge.txt", "r", encoding="utf-8") as f:
         hotel_context = f.read()
-except FileNotFoundError:
-    hotel_context = "Mandarin Oriental Muscat is a luxury hotel in Shatti Al Qurum, Oman."
-
-# بخش هدر برنامه
-try:
-    # اگر فایل header.jpg را در گیت‌هاب آپلود کرده‌اید:
-    st.image("header.jpg", use_container_width=True)
 except:
-    # در غیر این صورت فقط متن نمایش داده می‌شود
-    st.title("🏮 Mandarin Oriental, Muscat")
+    hotel_context = "Mandarin Oriental Muscat: Luxury hotel in Oman."
 
-st.markdown("### Welcome to your Digital Companion")
-st.write("How may I assist you with your stay or your journey in Oman today?")
+# ---------------------------------------------------------
+# 4. هدر اصلی (وسط‌چین کردن لوگو)
+# ---------------------------------------------------------
+col1, col2, col3 = st.columns([1, 1.2, 1])
+with col2:
+    try:
+        st.image("logo.png", use_container_width=True)
+    except:
+        st.markdown("<h1 style='text-align: center; color: #8D734A;'>🏮</h1>", unsafe_allow_html=True)
 
-# مدیریت حافظه چت (Session State)
+st.markdown("<h1 style='text-align: center; color: #8D734A; letter-spacing: 2px; font-family: serif; margin-bottom: 0;'>MANDARIN ORIENTAL</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #666; font-size: 14px; letter-spacing: 4px; margin-top: -10px;'>MUSCAT</p>", unsafe_allow_html=True)
+st.write("---")
+
+# ---------------------------------------------------------
+# 5. سیستم چت (هوش مصنوعی)
+# ---------------------------------------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# نمایش پیام‌های قبلی چت
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# دریافت ورودی جدید از کاربر
-if prompt := st.chat_input("Ask me about the spa, dining, or local tours..."):
+if prompt := st.chat_input("How can I assist you today?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # فراخوانی هوش مصنوعی Groq
     with st.chat_message("assistant"):
         try:
-            # استفاده از قدرتمندترین مدل رایگان Groq
             chat_completion = client.chat.completions.create(
-                model="llama-3.3-70b-versatile", 
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {
                         "role": "system",
-                        "content": f"You are a luxury concierge for Mandarin Oriental Muscat. Use this knowledge: {hotel_context}. Be extremely polite, professional, and helpful. Respond in the same language as the guest."
+                        "content": f"You are the professional AI Concierge for Mandarin Oriental Muscat. Use: {hotel_context}. Always reply in the same language as the guest. Be elegant and helpful."
                     },
                     *st.session_state.messages
                 ],
+                temperature=0.3
             )
-            full_response = chat_completion.choices[0].message.content
-            st.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-        except Exception as e:
-            st.error("I apologize, but I am experiencing a brief connection issue. Please try again or contact our reception.")
+            response = chat_completion.choices[0].message.content
+            st.markdown(response)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+        except:
+            st.error("I am currently experiencing a high volume of requests. Please try again.")
 
-# سایدبار برای درخواست‌های سریع و واتس‌اپ
-st.sidebar.header("Quick Services")
-st.sidebar.write("Instant requests via WhatsApp:")
+# ---------------------------------------------------------
+# 6. سایدبار (سرویس‌ها و تاکسی)
+# ---------------------------------------------------------
+with st.sidebar:
+    try:
+        st.image("logo.png", width=120)
+    except:
+        pass
+    
+    st.markdown("### 🚕 VIP Otaxi Service")
+    st.caption("No SIM required. Charge to room.")
+    
+    with st.form("taxi_form"):
+        dest = st.selectbox("Destination", ["Airport", "Mutrah Souq", "Grand Mosque", "Opera House"])
+        tm = st.time_input("Pickup Time", value=datetime.now().time())
+        if st.form_submit_button("Request Taxi"):
+            msg = f"🚖 TAXI REQUEST\nRoom: 302\nTo: {dest}\nAt: {tm}\nPayment: Room Charge"
+            encoded_msg = urllib.parse.quote(msg)
+            # شماره خود را اینجا جایگزین کنید
+            st.markdown(f"[✅ Confirm on WhatsApp](https://wa.me/968XXXXXXXX?text={encoded_msg})")
 
-# شماره شما برای دمو (بدون + یا صفر اول)
-YOUR_NUMBER = "96891278434" 
+    st.divider()
+    st.markdown("### 🛎️ Quick Actions")
+    
+    # دکمه‌های سریع واتس‌اپ
+    def wa_btn(label, text):
+        url = f"https://wa.me/968XXXXXXXX?text={urllib.parse.quote(text)}"
+        if st.button(label):
+            st.markdown(f"[Send to Concierge]({url})")
 
-def create_wa_link(text):
-    import urllib.parse
-    encoded_text = urllib.parse.quote(text)
-    return f"https://wa.me/{YOUR_NUMBER}?text={encoded_text}"
+    wa_btn("🧹 Housekeeping", "Please send housekeeping to Room 302.")
+    wa_btn("☕ Room Service", "I would like to order breakfast in Room 302.")
+    
+    st.divider()
+    if st.button("📍 Share My Location"):
+        msg = "I am outside and need assistance. (Attach location in WhatsApp)"
+        st.markdown(f"[Open WhatsApp](https://wa.me/968XXXXXXXX?text={urllib.parse.quote(msg)})")
 
-if st.sidebar.button("🧹 Request Housekeeping"):
-    st.sidebar.markdown(f"[Confirm on WhatsApp]({create_wa_link('Hello, please send housekeeping to my room (Room 302).')})")
-
-if st.sidebar.button("☕ Order Room Service"):
-    st.sidebar.markdown(f"[Confirm on WhatsApp]({create_wa_link('I would like to order breakfast/coffee to Room 302.')})")
-
-if st.sidebar.button("🚕 Book a Private Tour"):
-    st.sidebar.markdown(f"[Confirm on WhatsApp]({create_wa_link('I am interested in a private tour to Nizwa or Jebel Akhdar.')})")
-
-st.sidebar.divider()
-st.sidebar.caption("Mandarin Oriental Muscat AI Companion v1.0")
+    st.caption("v2.5 • Mandarin Oriental Muscat")
