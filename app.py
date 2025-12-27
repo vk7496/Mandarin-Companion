@@ -150,4 +150,15 @@ with st.sidebar:
         msg = "I am outside and need assistance. (Attach location in WhatsApp)"
         st.markdown(f"[Open WhatsApp](https://wa.me/96891278434?text={urllib.parse.quote(msg)})")
 
-    st.caption("v2.5 • Mandarin Oriental Muscat")
+st.caption("v2.5 • Mandarin Oriental Muscat")
+
+    st.write("---") # خط جداکننده
+st.markdown(
+    """
+    <div style='text-align: center; color: #8D734A; font-size: 13px; padding: 20px;'>
+        <p style='margin-bottom: 5px;'>Designed & Developed by <strong>Vista Kaviani</strong></p>
+        <p style='font-size: 11px; color: #999;'>© 2024 AI Innovation Partnership | All Rights Reserved</p>
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
