@@ -1,7 +1,6 @@
 import streamlit as st
 from groq import Groq
 import urllib.parse
-from datetime import datetime
 import os
 
 # 1. تنظیمات صفحه
@@ -11,16 +10,12 @@ st.set_page_config(
     layout="centered"
 )
 
-# ---------------------------------------------------------
-# تنظیمات شماره واتس‌اپ (فقط عدد داخل گیومه را تغییر بده)
-# ---------------------------------------------------------
 # 👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇
-WHATSAPP_NUMBER = "96891278434" 
+# شماره واتس‌اپ خودت (بدون +)
+WHATSAPP_NUMBER = "96891278454" 
 # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
-# نکته: شماره را با کد کشور (968) و بدون + وارد کن.
-# ---------------------------------------------------------
 
-# 2. استایل سفارشی (لوکس و مینیمال)
+# 2. استایل سفارشی
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700&display=swap');
@@ -34,34 +29,39 @@ st.markdown("""
         color: #8D734A !important;
         background-color: transparent !important;
     }
-    .stButton>button:hover {
-        background-color: #8D734A !important;
-        color: white !important;
-    }
+    .stButton>button:hover { background-color: #8D734A !important; color: white !important; }
     
-    .footer-text {
+    /* استایل مخصوص برای کپی‌رایت که حتما دیده شود */
+    .footer-container {
+        position: static;
+        bottom: 0;
+        width: 100%;
         text-align: center;
         color: #8D734A;
         font-family: serif;
-        padding: 30px;
-        letter-spacing: 1px;
+        padding: 40px 10px;
+        margin-top: 50px;
+        border-top: 1px solid #eee;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. اتصال به API (Groq)
-client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+# 3. اتصال به API
+try:
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+except:
+    st.warning("API Key not found. Please check Streamlit Secrets.")
 
-# بارگذاری دانش هتل
 try:
     with open("knowledge.txt", "r", encoding="utf-8") as f:
         hotel_context = f.read()
 except:
-    hotel_context = "Mandarin Oriental Muscat: A luxury hotel in Oman."
+    hotel_context = "Mandarin Oriental Muscat context."
 
 # 4. هدر و لوگو
 col1, col2, col3 = st.columns([1, 1.5, 1])
 with col2:
+    # تلاش برای نمایش لوگو، اگر نبود متن نشان می‌دهد
     if os.path.exists("logo.png"):
         st.image("logo.png", use_container_width=True)
     else:
@@ -71,76 +71,70 @@ st.markdown("<h2 style='text-align: center; color: #8D734A; letter-spacing: 2px;
 st.markdown("<p style='text-align: center; color: #666; font-size: 14px; letter-spacing: 4px; margin-top: -10px;'>MUSCAT</p>", unsafe_allow_html=True)
 st.write("---")
 
-# 5. مدیریت چت و پیام خوش‌آمدگویی (۲۰ زبان)
-if "messages" not in st.session_state:
+# 5. منطق تضمینی برای پیام خوش‌آمدگویی
+# اگر حافظه خالی بود یا کلا پیام‌ها پاک شده بود، خوش‌آمدگویی اضافه شود
+if "messages" not in st.session_state or len(st.session_state.messages) == 0:
     st.session_state.messages = []
-    welcome_msg = """Welcome to Mandarin Oriental, Muscat. I am your AI Concierge, capable of communicating in over 20 languages. How may I assist you today?
+    welcome_msg = """Welcome to Mandarin Oriental, Muscat. I am your AI Concierge, fluent in over 20 languages. How may I assist you with your stay, dining, or transportation?
     
-مرحباً بكم في ماندارين أورینتال، مسقط. أنا مساعدكم الذکی، أتقن أكثر من ٢٠ لغة لخدمتكم. كيف يمكنني مساعدتكم اليوم؟"""
+مرحباً بكم في ماندارين أورینتال، مسقط. أنا مساعدكم الذکی. كيف يمكنني مساعدتكم اليوم؟"""
     st.session_state.messages.append({"role": "assistant", "content": welcome_msg})
 
+# نمایش پیام‌ها
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+# ورودی چت
 if prompt := st.chat_input("Ask me anything..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        chat_completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {
-                    "role": "system",
-                    "content": f"You are the Elite AI Concierge for Mandarin Oriental Muscat. Context: {hotel_context}. You support 20+ languages. Respond in the same language as the guest. Be elegant and formal."
-                },
-                *st.session_state.messages
-            ],
-            temperature=0.3
-        )
-        response = chat_completion.choices[0].message.content
-        st.markdown(response)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+        try:
+            chat_completion = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"You are the Elite AI Concierge for Mandarin Oriental Muscat. Context: {hotel_context}. You speak 20+ languages. Respond ONLY in the user's language. Be brief and elegant."
+                    },
+                    *st.session_state.messages
+                ],
+                temperature=0.3
+            )
+            response = chat_completion.choices[0].message.content
+            st.markdown(response)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+        except Exception as e:
+            st.error("Connection error. Please try again.")
 
-# 6. سایدبار (واتس‌اپ هوشمند متصل به شماره شما)
+# 6. سایدبار
 with st.sidebar:
     if os.path.exists("logo.png"):
         st.sidebar.image("logo.png", width=120)
     
-    st.markdown("### 🚕 VIP Otaxi Service")
-    st.caption("No Local SIM Required")
-    
+    st.markdown("### 🚕 VIP Otaxi")
     with st.form("taxi_form"):
-        dest = st.selectbox("Destination", ["Airport", "Mutrah Souq", "Grand Mosque", "Opera House", "Royal Opera House"])
+        dest = st.selectbox("Destination", ["Airport", "Mutrah Souq", "Grand Mosque", "Opera House"])
         if st.form_submit_button("Request via WhatsApp"):
-            msg = f"Hello MO Concierge, I would like to request an Otaxi to: {dest}. Please charge this to my room. (Requested via AI Companion)"
-            st.markdown(f"[✅ Confirm on WhatsApp](https://wa.me/{WHATSAPP_NUMBER}?text={urllib.parse.quote(msg)})")
+            msg = f"Requesting Otaxi to {dest}. Charge to room."
+            st.markdown(f"[✅ Confirm](https://wa.me/{WHATSAPP_NUMBER}?text={urllib.parse.quote(msg)})")
 
     st.divider()
-    st.markdown("### 🛎️ Quick Requests")
-    
-    if st.button("🧹 Request Housekeeping"):
-        hk_msg = "Dear Housekeeping, I would like to request room cleaning for my suite. Thank you."
-        st.markdown(f"[Send to WhatsApp](https://wa.me/{WHATSAPP_NUMBER}?text={urllib.parse.quote(hk_msg)})")
-        
-    if st.button("🍽️ Room Service"):
-        rs_msg = "Hello, I would like to view the In-Room Dining menu or place an order."
-        st.markdown(f"[Send to WhatsApp](https://wa.me/{WHATSAPP_NUMBER}?text={urllib.parse.quote(rs_msg)})")
+    if st.button("🧹 Housekeeping"):
+        st.markdown(f"[Send Request](https://wa.me/{WHATSAPP_NUMBER}?text=Housekeeping%20Request)")
+    if st.button("📍 Share Location"):
+        st.markdown(f"[Share Location](https://wa.me/{WHATSAPP_NUMBER}?text=Location%20Request)")
 
-    st.divider()
-    if st.button("📍 Share My Location"):
-        loc_msg = "I am currently outside the hotel and need assistance. (I will attach my location in the next message)"
-        st.markdown(f"[Contact Concierge](https://wa.me/{WHATSAPP_NUMBER}?text={urllib.parse.quote(loc_msg)})")
-
-# 7. بخش کپی‌رایت نهایی
-st.write("---")
+# 7. بخش کپی‌رایت (با طراحی جدید برای دیده شدن)
+st.markdown("<br><br>", unsafe_allow_html=True) # ایجاد فاصله
 st.markdown(
     """
-    <div class="footer-text">
-        <p style='margin-bottom: 5px;'>Designed & Developed by <strong>Vista Kaviani</strong></p>
-        <p style='font-size: 10px; color: #999; letter-spacing: 2px;'>© 2024 AI INNOVATION PARTNERSHIP | MO MUSCAT</p>
+    <div class="footer-container">
+        <p style='margin-bottom: 5px; font-size: 14px;'>Designed & Developed by <strong>Vista Kaviani</strong></p>
+        <p style='font-size: 10px; color: #999; letter-spacing: 2px;'>© 2024 AI INNOVATION PARTNERSHIP</p>
     </div>
     """, 
     unsafe_allow_html=True
