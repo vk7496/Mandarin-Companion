@@ -75,7 +75,7 @@ with st.sidebar:
     
     # دکمه واتس‌اپ در انتهای منو
     st.markdown("""
-        <a href="https://wa.me/96812345678" class="whatsapp-btn">
+        <a href="https://wa.me/9681278434" class="whatsapp-btn">
             💬 Connect on WhatsApp
         </a>
     """, unsafe_allow_html=True)
