@@ -5,69 +5,131 @@ from datetime import datetime
 import os
 
 # --- تنظیمات صفحه ---
-st.set_page_config(page_title="MO Muscat | Digital Concierge", page_icon="🏮")
+st.set_page_config(page_title="MO Muscat | Digital Concierge", page_icon="🏮", layout="wide")
 
-# --- استایل لوکس اختصاصی ---
+# --- استایل CSS برای شبیه سازی تصویر ارسالی ---
 st.markdown("""
     <style>
-    .main { background-color: #fcfcfc; }
-    .stButton>button { 
-        width: 100%; border-radius: 8px; border: 1px solid #8D734A; 
-        background-color: #8D734A; color: white; font-weight: bold;
+    /* استایل منوی سمت چپ */
+    [data-testid="stSidebar"] {
+        background-color: #1e2630;
     }
-    .stButton>button:hover { background-color: #6d5939; color: white; }
-    .footer { text-align: center; padding: 20px; color: #8D734A; font-size: 12px; margin-top: 50px; border-top: 1px solid #eee; }
+    [data-testid="stSidebar"] * {
+        color: #ffffff;
+    }
+    .stButton>button {
+        width: 100%;
+        border-radius: 5px;
+        border: 1px solid #8D734A;
+        background-color: #8D734A;
+        color: white;
+    }
+    .whatsapp-btn {
+        background-color: #25D366 !important;
+        color: white !important;
+        font-weight: bold;
+        text-align: center;
+        padding: 10px;
+        border-radius: 5px;
+        text-decoration: none;
+        display: block;
+        margin-top: 20px;
+    }
     h1 { color: #8D734A; text-align: center; font-family: 'serif'; }
-    .status-box { padding: 10px; border-radius: 5px; background-color: #f0ede9; color: #8D734A; text-align: center; margin-bottom: 20px; }
+    .status-box { 
+        padding: 10px; 
+        border-radius: 10px; 
+        background-color: #e8f0fe; 
+        color: #1e2630; 
+        text-align: center; 
+        margin-bottom: 20px;
+        border: 1px solid #d1d9e6;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# اتصال به Groq (مطمئن شوید API Key در Secrets ست شده است)
+# مقداردهی Groq
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
-# --- مدیریت ورود مسافر (فقط شماره اتاق) ---
+# تابع ذخیره آمار (اصلاح شده)
+def log_analytics(room):
+    file_name = "mo_analytics.csv"
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    new_data = pd.DataFrame([[now, room]], columns=['Timestamp', 'RoomNumber'])
+    
+    if not os.path.isfile(file_name):
+        new_data.to_csv(file_name, index=False)
+    else:
+        new_data.to_csv(file_name, mode='a', header=False, index=False)
+
+# --- Sidebar (داشبورد) ---
+with st.sidebar:
+    st.image("https://upload.wikimedia.org/wikipedia/en/thumb/4/43/Mandarin_Oriental_Logo.svg/1200px-Mandarin_Oriental_Logo.svg.png", width=150)
+    st.title("Dashboard")
+    st.write("---")
+    st.button("🏠 Home")
+    st.button("🛎️ Room Service")
+    st.button("🚗 Book Transportation")
+    st.button("🍴 Dining")
+    st.button("✨ Local Experiences")
+    
+    # دکمه واتس‌اپ در انتهای منو
+    st.markdown("""
+        <a href="https://wa.me/96812345678" class="whatsapp-btn">
+            💬 Connect on WhatsApp
+        </a>
+    """, unsafe_allow_html=True)
+    
+    st.write("---")
+    # بخش آنالیز در انتهای داشبورد
+    with st.expander("📊 Management Analytics"):
+        pwd = st.text_input("Password:", type="password")
+        if pwd == "MO2026":
+            if os.path.isfile("mo_analytics.csv"):
+                df = pd.read_csv("mo_analytics.csv")
+                st.write(f"Total Uses: {len(df)}")
+                st.dataframe(df)
+                if st.button("🗑️ Clear Data"):
+                    os.remove("mo_analytics.csv")
+                    st.rerun()
+            else:
+                st.write("No data recorded.")
+
+# --- محتوای اصلی صفحه ---
 if "guest_identified" not in st.session_state:
     st.session_state.guest_identified = False
 
+st.image("https://upload.wikimedia.org/wikipedia/en/thumb/4/43/Mandarin_Oriental_Logo.svg/1200px-Mandarin_Oriental_Logo.svg.png", width=100)
 st.markdown("<h1>MANDARIN ORIENTAL</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #555;'>MUSCAT</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; margin-top:-20px;'>MUSCAT</p>", unsafe_allow_html=True)
 
-# مرحله ۱: ورود فقط با شماره اتاق (Privacy-First)
 if not st.session_state.guest_identified:
     with st.container():
-        st.write("### Digital Concierge Access")
-        st.write("Please enter your room number to enjoy our personalized AI services.")
-        room_num = st.text_input("Room Number:", placeholder="e.g. 402")
-        if st.button("Access Services"):
+        st.write("### Welcome to your Digital Concierge")
+        room_num = st.text_input("Please enter your Room Number to begin:", placeholder="e.g. 302")
+        if st.button("Start Experience"):
             if room_num:
                 st.session_state.room_number = room_num
                 st.session_state.guest_identified = True
-                
-                # ذخیره آمار در فایل CSV
-                file_name = "hotel_analytics.csv"
-                new_entry = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d %H:%M"), room_num]], columns=['DateTime', 'RoomNumber'])
-                if not os.path.isfile(file_name):
-                    new_entry.to_csv(file_name, index=False)
-                else:
-                    new_entry.to_csv(file_name, mode='a', header=False, index=False)
+                log_analytics(room_num) # ثبت در فایل
                 st.rerun()
             else:
-                st.error("Please enter a valid room number.")
+                st.error("Room number is required.")
 
-# مرحله ۲: اینترفیس اصلی خدمات
 else:
     st.markdown(f"<div class='status-box'>Connected: <b>Room {st.session_state.room_number}</b></div>", unsafe_allow_html=True)
     
-    # دکمه‌های خدمات سریع
     col1, col2 = st.columns(2)
+    # لینک‌های واتس‌اپ با متن آماده
     with col1:
-        if st.button("🧹 Room Service"):
-            st.info(f"Your request for Room {st.session_state.room_number} has been logged.")
+        wa_room_service = f"https://wa.me/96812345678?text=Hello, I am in Room {st.session_state.room_number} and I would like to request Room Service."
+        st.markdown(f'<a href="{wa_room_service}" target="_blank" style="text-decoration:none;"><button style="width:100%; background-color:#8D734A; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">🛎️ Room Service</button></a>', unsafe_allow_html=True)
+    
     with col2:
-        if st.button("🚕 Book Transportation"):
-            st.info("Directing your request to the concierge desk...")
+        wa_taxi = f"https://wa.me/96812345678?text=Hello, I am in Room {st.session_state.room_number} and I need to book a taxi."
+        st.markdown(f'<a href="{wa_taxi}" target="_blank" style="text-decoration:none;"><button style="width:100%; background-color:#8D734A; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">🚕 Book Transportation</button></a>', unsafe_allow_html=True)
 
-    # چت‌بات هوشمند
+    # سیستم چت
     if "messages" not in st.session_state:
         st.session_state.messages = [{"role": "assistant", "content": f"Welcome. I am your AI Concierge for Room {st.session_state.room_number}. How may I assist you today?"}]
 
@@ -82,24 +144,9 @@ else:
         with st.chat_message("assistant"):
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
-                messages=[{"role": "system", "content": f"You are a luxury concierge for Mandarin Oriental Muscat. The guest is in room {st.session_state.room_number}. Be extremely polite and formal."}, *st.session_state.messages]
+                messages=[{"role": "system", "content": f"You are a luxury concierge for Mandarin Oriental Muscat. The guest is in room {st.session_state.room_number}."}, *st.session_state.messages]
             ).choices[0].message.content
             st.write(response)
             st.session_state.messages.append({"role": "assistant", "content": response})
 
-# --- پنل مدیریت (برای شما و مدیر هتل) ---
-with st.expander("📊 Management Analytics (Password Required)"):
-    pwd = st.text_input("Admin Password:", type="password")
-    if pwd == "MO2026": # پسورد پیشنهادی
-        if os.path.isfile("hotel_analytics.csv"):
-            data = pd.read_csv("hotel_analytics.csv")
-            st.write(f"Total Interactions: **{len(data)}**")
-            st.dataframe(data)
-            st.download_button("Download Full CSV Report", data.to_csv(index=False), "mo_report.csv")
-            if st.button("🗑️ Wipe All Data (End Trial)"):
-                os.remove("hotel_analytics.csv")
-                st.success("All guest data has been deleted.")
-        else:
-            st.write("No data recorded yet.")
-
-st.markdown("<div class='footer'>© 2025 | Developed by Vista Kaviani for Mandarin Oriental</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center; color:#999; font-size:10px; margin-top:50px;'>Developed by Vista Kaviani for Mandarin Oriental</div>", unsafe_allow_html=True)
