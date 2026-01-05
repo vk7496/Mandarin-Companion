@@ -6,7 +6,7 @@ import os
 import urllib.parse
 
 # --- Configurations ---
-HOTEL_WHATSAPP = "96812345678" # شماره هتل را اینجا اصلاح کنید
+HOTEL_WHATSAPP = "96891278434" # شماره هتل را اینجا اصلاح کنید
 
 st.set_page_config(page_title="MO Muscat | Digital Concierge", page_icon="🏮", layout="wide")
 
